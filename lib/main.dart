@@ -84,6 +84,12 @@ class _TodoListState extends State<TodoList> {
     _textFieldController.clear();
   }
 
+  void _handleTodoChange(Todo todo) {
+    setState(() {
+      todo.completed = !todo.completed;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,26 +97,11 @@ class _TodoListState extends State<TodoList> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[],
-        ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        children: _todos.map((Todo todo) {
+          return TodoItem(todo: todo, onTodoChanged: _handleTodoChange);
+        }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _displayDialog(),
@@ -125,4 +116,51 @@ class Todo {
   Todo({required this.name, required this.completed});
   String name;
   bool completed;
+}
+
+class TodoItem extends StatelessWidget {
+  TodoItem({required this.todo, required this.onTodoChanged})
+    : super(key: ObjectKey(todo));
+
+  final void Function(Todo todo) onTodoChanged;
+  final Todo todo;
+
+  TextStyle? _getTextStyle(bool checked) {
+    if (!checked) return null;
+
+    return const TextStyle(
+      color: Colors.black54,
+      decoration: TextDecoration.lineThrough,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: () {
+        onTodoChanged(todo);
+      },
+      leading: Checkbox(
+        checkColor: Colors.greenAccent,
+        activeColor: Colors.red,
+        value: todo.completed,
+        onChanged: (value) {
+          onTodoChanged(todo);
+        },
+      ),
+      title: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(todo.name, style: _getTextStyle(todo.completed)),
+          ),
+          IconButton(
+            iconSize: 30,
+            icon: const Icon(Icons.delete, color: Colors.red),
+            alignment: Alignment.centerRight,
+            onPressed: () {},
+          ),
+        ],
+      ),
+    );
+  }
 }
