@@ -17,7 +17,6 @@ class TodoApp extends StatelessWidget {
           seedColor: const Color.fromARGB(255, 180, 120, 37)
         ),
       ),
-      home: const TodoList(title: 'Hola mundo', message: Text('Hola', style: TextStyle(fontSize: 15, color: Colors.black)),)
     );
   }
 }
@@ -98,6 +97,15 @@ class _TodoListState extends State<TodoList> {
     });
   }
 
+  void _updateTodo(Todo todo, String newName) {
+    setState(() {
+      final index = _todos.indexWhere((t) => t.id == todo.id);
+      if (index != -1) {
+        _todos[index].name = newName;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +122,7 @@ class _TodoListState extends State<TodoList> {
             todo: todo,
             onTodoChanged: _handleTodoChange,
             removeTodo: _deleteTodo,
+            updateTodo: _updateTodo,
           );
         }).toList(),
       ),
@@ -138,11 +147,13 @@ class TodoItem extends StatelessWidget {
     required this.todo,
     required this.onTodoChanged,
     required this.removeTodo,
+    required this.updateTodo,
   }) : super(key: ObjectKey(todo));
 
   final void Function(Todo todo) onTodoChanged;
   final Todo todo;
   final void Function(Todo todo) removeTodo;
+  final void Function(Todo todo, String newName) updateTodo;
 
   TextStyle? _getTextStyle(bool checked) {
     if (!checked) return null;
@@ -171,6 +182,39 @@ class TodoItem extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(todo.name, style: _getTextStyle(todo.completed)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.blue),
+            onPressed: () async {
+              final controller = TextEditingController(text: todo.name);
+              final result = await showDialog<String?>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Edit todo'),
+                  content: TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: const InputDecoration(hintText: 'Edit task'),
+                    onSubmitted: (value) {
+                      Navigator.of(context).pop(value);
+                    },
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(controller.text),
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              );
+              if (result != null && result.trim().isNotEmpty) {
+                updateTodo(todo, result.trim());
+              }
+            },
           ),
           IconButton(
             iconSize: 30,
