@@ -14,18 +14,19 @@ class TodoApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 180, 120, 37),
+          seedColor: const Color.fromARGB(255, 180, 120, 37)
         ),
       ),
-      home: const TodoList(title: 'Hola mundo'),
+      home: const TodoList(title: 'Hola mundo', message: Text('Hola', style: TextStyle(fontSize: 15, color: Colors.black)),)
     );
   }
 }
 
 class TodoList extends StatefulWidget {
-  const TodoList({super.key, required this.title});
+  const TodoList({super.key, required this.title, required this.message});
 
   final String title;
+  final Text message;
 
   @override
   State<TodoList> createState() => _TodoListState();
@@ -79,9 +80,16 @@ class _TodoListState extends State<TodoList> {
 
   void _addTodoItem(String name) {
     setState(() {
-      _todos.add(Todo(name: name, completed: false));
+      DateTime now = DateTime.now();
+      _todos.add(Todo(id: now, name: name, completed: false));
     });
     _textFieldController.clear();
+  }
+
+  void _deleteTodo(Todo todo) {
+    setState(() {
+      _todos.removeWhere((item) => item.id == todo.id);
+    });
   }
 
   void _handleTodoChange(Todo todo) {
@@ -97,15 +105,21 @@ class _TodoListState extends State<TodoList> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: ListView(
+      body: _todos.isEmpty
+      ? Center(child: Text('No todo exists. Please create one and track your work', style: TextStyle(fontSize: 18)))
+      : ListView(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         children: _todos.map((Todo todo) {
-          return TodoItem(todo: todo, onTodoChanged: _handleTodoChange);
+          return TodoItem(
+            todo: todo,
+            onTodoChanged: _handleTodoChange,
+            removeTodo: _deleteTodo,
+          );
         }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _displayDialog(),
-        tooltip: 'Add a Todo',
+        tooltip: 'Agregar una tarea',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
@@ -113,17 +127,22 @@ class _TodoListState extends State<TodoList> {
 }
 
 class Todo {
-  Todo({required this.name, required this.completed});
+  Todo({required this.id, required this.name, required this.completed});
+  DateTime id;
   String name;
   bool completed;
 }
 
 class TodoItem extends StatelessWidget {
-  TodoItem({required this.todo, required this.onTodoChanged})
-    : super(key: ObjectKey(todo));
+  TodoItem({
+    required this.todo,
+    required this.onTodoChanged,
+    required this.removeTodo,
+  }) : super(key: ObjectKey(todo));
 
   final void Function(Todo todo) onTodoChanged;
   final Todo todo;
+  final void Function(Todo todo) removeTodo;
 
   TextStyle? _getTextStyle(bool checked) {
     if (!checked) return null;
@@ -141,8 +160,8 @@ class TodoItem extends StatelessWidget {
         onTodoChanged(todo);
       },
       leading: Checkbox(
-        checkColor: Colors.greenAccent,
-        activeColor: Colors.red,
+        checkColor: const Color.fromARGB(255, 0, 0, 0),
+        activeColor: const Color.fromARGB(255, 85, 84, 84),
         value: todo.completed,
         onChanged: (value) {
           onTodoChanged(todo);
@@ -157,7 +176,7 @@ class TodoItem extends StatelessWidget {
             iconSize: 30,
             icon: const Icon(Icons.delete, color: Colors.red),
             alignment: Alignment.centerRight,
-            onPressed: () {},
+            onPressed: () { removeTodo(todo); },
           ),
         ],
       ),
